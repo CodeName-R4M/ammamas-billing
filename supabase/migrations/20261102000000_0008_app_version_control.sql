@@ -62,7 +62,7 @@ create policy "app_version_read_all" on app_version_control
 drop policy if exists "app_version_admin_write" on app_version_control;
 create policy "app_version_admin_write" on app_version_control
   for all to authenticated
-  using (app_role() = 'admin') with check (app_role() = 'admin');
+  using (public.is_admin()) with check (public.is_admin());
 
 grant select on app_version_control to anon, authenticated;
 grant insert, update, delete on app_version_control to authenticated;
@@ -82,7 +82,7 @@ declare
   v_row app_version_control;
   v_uid uuid := auth.uid();
 begin
-  if app_role() <> 'admin' then
+  if not public.is_admin() then
     raise exception 'Only admins can publish an app version';
   end if;
 
