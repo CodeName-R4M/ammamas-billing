@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { jsPDF } from 'jspdf';
+import { Printer as NativePrinter } from '@capgo/capacitor-printer';
 import { ArrowLeft, Download, Printer, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDemoStore } from '@/stores/demo-store';
@@ -274,11 +275,22 @@ export function Receipt() {
     toast.success('Receipt PDF downloaded');
   };
 
-  const printReceipt = () => {
-    if (paper === 'a4') { window.print(); return; }
+  /**
+   * Prints through the device's own print dialog. A WebView cannot run
+   * `window.print()` on Android, so the native PrintManager handles it — the
+   * plugin renders the receipt off-screen and never takes over the app (the old
+   * popup window trapped the cashier on the bill with no way back).
+   */
+  const printReceipt = async () => {
+    if (paper === 'a4') {
+      try {
+        await NativePrinter.printWebView({ name: sale.receipt_no });
+      } catch {
+        toast.error('Could not open the print dialog on this device.');
+      }
+      return;
+    }
     const widthMm = PAPER_MM[paper];
-    const win = window.open('', '_blank', 'width=420,height=680');
-    if (!win) { toast.error('Please allow popups to print the receipt'); return; }
 
     const itemsHtml = sale.items.map((it) => `
       <div class="item">
@@ -286,7 +298,7 @@ export function Receipt() {
         <div class="row"><span>${it.qty} x ${esc(money(it.unit_price))}</span><span>${esc(money(it.line_total))}</span></div>
       </div>`).join('');
 
-    win.document.write(`<!doctype html>
+    const html = `<!doctype html>
 <html><head><meta charset="utf-8"><title>${esc(sale.receipt_no)}</title>
 <style>
   @page { size: ${widthMm}mm auto; margin: 0; }
@@ -323,10 +335,13 @@ export function Receipt() {
   <hr>
   <div class="c">Thank you for shopping with us!</div>
   <div class="c tiny">${esc(WATERMARK_TEXT)}</div>
-  <script>window.onload = function () { setTimeout(function () { window.print(); }, 250); };</script>
-</body></html>`);
-    win.document.close();
-    win.focus();
+</body></html>`;
+
+    try {
+      await NativePrinter.printHtml({ name: sale.receipt_no, html });
+    } catch {
+      toast.error('Could not open the print dialog on this device.');
+    }
   };
 
   return (
