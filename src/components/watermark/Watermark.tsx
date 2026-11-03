@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { WATERMARK_TEXT } from '@/lib/brand';
 
 export function Watermark({ variant = 'footer' }: { variant?: 'footer' | 'fixed' }) {
-  const base = 'PROVIDED BY ALPHA DIGITRONIX SOLUTION';
+  const base = WATERMARK_TEXT;
   if (variant === 'fixed') {
     return (
       <div className="pointer-events-none fixed bottom-1 right-2 z-40 select-none">

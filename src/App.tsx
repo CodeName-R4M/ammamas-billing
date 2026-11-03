@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from '@/stores/auth-store';
-import { syncCatalogFromSupabase } from '@/lib/sync';
+import { syncCatalogFromSupabase, syncBusinessSettings } from '@/lib/sync';
 import { Splash } from '@/features/auth/Splash';
 import { Login } from '@/features/auth/Login';
 import { CashierLayout } from '@/components/layout/CashierLayout';
@@ -29,6 +29,9 @@ const AdminPayments = page(() => import('@/features/admin/AdminSales'), 'AdminPa
 const AdminSuppliers = page(() => import('@/features/admin/AdminSuppliersCoupons'), 'AdminSuppliers');
 const AdminCoupons = page(() => import('@/features/admin/AdminSuppliersCoupons'), 'AdminCoupons');
 const AdminReports = page(() => import('@/features/admin/AdminReports'), 'AdminReports');
+const AdminExpenses = page(() => import('@/features/admin/AdminExpenses'), 'AdminExpenses');
+const AdminInvestments = page(() => import('@/features/admin/AdminInvestments'), 'AdminInvestments');
+const AdminCustomers = page(() => import('@/features/admin/AdminCustomers'), 'AdminCustomers');
 const AdminUsers = page(() => import('@/features/admin/AdminUsers'), 'AdminUsers');
 const AdminSettings = page(() => import('@/features/admin/AdminSettings'), 'AdminSettings');
 
@@ -56,6 +59,7 @@ export default function App() {
 
   useEffect(() => {
     useAuthStore.getState().restoreSession();
+    syncBusinessSettings();
     syncCatalogFromSupabase();
   }, []);
 
@@ -92,6 +96,9 @@ export default function App() {
             <Route path="suppliers" element={<AdminSuppliers />} />
             <Route path="coupons" element={<AdminCoupons />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="investments" element={<AdminInvestments />} />
+            <Route path="customers" element={<AdminCustomers />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
@@ -99,7 +106,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/pos" replace />} />
         </Routes>
       </Suspense>
-      {/* Backend/frontend version mismatch notice — checked once per app session */}
       <UpdateNotificationModal />
       <Toaster position="top-center" toastOptions={{ style: { borderRadius: '12px', fontSize: '14px' } }} />
     </BrowserRouter>

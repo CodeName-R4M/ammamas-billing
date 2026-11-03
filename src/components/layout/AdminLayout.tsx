@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderTree, Package, Boxes, ArrowLeftRight, ShoppingCart,
   CreditCard, Truck, Ticket, BarChart3, Users, Settings, LogOut, Menu,
+  Receipt, PiggyBank, Contact,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Watermark } from '@/components/watermark/Watermark';
 import { ConnectionBanner, ConnectionBadge } from '@/components/common/ConnectionStatus';
+import { APP_NAME } from '@/lib/brand';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -20,6 +22,9 @@ const navItems = [
   { to: '/admin/suppliers', label: 'Suppliers', icon: Truck },
   { to: '/admin/coupons', label: 'Coupons', icon: Ticket },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/admin/expenses', label: 'Expenses', icon: Receipt },
+  { to: '/admin/investments', label: 'Investments', icon: PiggyBank },
+  { to: '/admin/customers', label: 'Buyers', icon: Contact },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
@@ -39,7 +44,7 @@ export function AdminLayout() {
           <img src="/logo-red.png" alt="Ammamas" className="max-h-full max-w-full object-contain" />
         </div>
         <div>
-          <p className="text-sm font-bold text-neutral-900 leading-tight">Ammamas</p>
+          <p className="text-sm font-bold text-neutral-900 leading-tight">{APP_NAME}</p>
           <p className="text-xs text-primary-600 font-medium">Admin Console</p>
         </div>
       </div>

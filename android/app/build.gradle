@@ -22,6 +22,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    // Name the APK after the app instead of Gradle's default "app-<buildType>.apk".
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "AmmamasBilling-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 repositories {

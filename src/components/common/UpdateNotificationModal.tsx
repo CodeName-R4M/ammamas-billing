@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Download, MessageSquare, X, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Download, MessageSquare, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { checkBackendVersion, markUpdateDialogSeen, type VersionCheckResult } from '@/lib/version';
+import { APP_VERSION, checkBackendVersion, markUpdateDialogSeen, type VersionCheckResult } from '@/lib/version';
+import { APP_NAME } from '@/lib/brand';
 
+/**
+ * Shows once per app session when the backend advertises a newer build. The
+ * versions are shown read-only for reference; only the developer can change
+ * them (the app version in code, the backend version in SQL). Neither admin nor
+ * cashier can edit them from the app.
+ */
 export function UpdateNotificationModal() {
   const [result, setResult] = useState<VersionCheckResult | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Only check once on frontend start/session start
     let active = true;
     checkBackendVersion().then((res) => {
       if (!active) return;
@@ -33,18 +39,18 @@ export function UpdateNotificationModal() {
     setOpen(false);
     if (result?.info.downloadUrl) {
       window.open(result.info.downloadUrl, '_blank');
-      toast.success('Redirecting to latest version download...');
+      toast.success('Opening the latest version…');
     } else {
-      // Force reload to bypass cache
+      // Reload so the newest build is fetched instead of the cached one.
       window.location.reload();
     }
   };
 
   const handleAskDeveloper = () => {
-    const email = result?.info.developerContact || 'developer@alphadigitronix.in';
-    const subject = encodeURIComponent(`Request for Latest Ammamas Copy (v${result?.backendVersion ?? '1.0.1'})`);
+    const email = result?.info.developerContact || 'support@alphadigitronix.in';
+    const subject = encodeURIComponent(`Request for the latest ${APP_NAME} copy`);
     const body = encodeURIComponent(
-      `Hello Developer,\n\nI am currently using Ammamas POS v${result?.currentVersion}.\nThe app detected that a new update v${result?.backendVersion} is available.\n\nPlease provide the new APK / build copy.\n\nThank you!`
+      `Hello Developer,\n\nMy ${APP_NAME} app is out of date and needs the latest copy.\n\nThank you!`,
     );
     navigator.clipboard?.writeText(email);
     toast.success(`Developer contact (${email}) copied to clipboard`);
@@ -63,7 +69,7 @@ export function UpdateNotificationModal() {
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl border border-primary-100"
         >
-          {/* Header Banner */}
+          {/* Header banner */}
           <div className="relative bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 p-6 text-white text-center">
             {!result.info.forceUpdate && (
               <button
@@ -75,9 +81,8 @@ export function UpdateNotificationModal() {
               </button>
             )}
 
-            {/* Logo in rounded badge */}
             <div className="mx-auto mb-3 grid h-16 w-20 place-items-center rounded-2xl bg-white p-1.5 shadow-md">
-              <img src="/logo-red.png" alt="Ammamas" className="max-h-full max-w-full object-contain" />
+              <img src="/logo-red.png" alt={APP_NAME} className="max-h-full max-w-full object-contain" />
             </div>
 
             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-xs">
@@ -87,32 +92,16 @@ export function UpdateNotificationModal() {
 
             <h2 className="mt-2 text-xl font-bold tracking-tight">New Version Ready</h2>
             <p className="mt-1 text-xs text-white/90">
-              A version mismatch between your app and the backend was found.
+              Your app is older than the server. Please update to keep billing and inventory in sync.
             </p>
           </div>
 
           {/* Body */}
           <div className="p-5 sm:p-6 space-y-4">
-            {/* Version Comparison Card */}
-            <div className="flex items-center justify-between rounded-2xl bg-accent-50/60 border border-accent-200 p-3.5 text-center">
-              <div className="flex-1">
-                <p className="text-[11px] font-medium text-neutral-500">Your Current Copy</p>
-                <p className="text-sm font-bold text-neutral-700">v{result.currentVersion}</p>
-              </div>
-              <div className="px-2 text-primary-600">
-                <ArrowUpRight size={20} className="stroke-[2.5]" />
-              </div>
-              <div className="flex-1">
-                <p className="text-[11px] font-medium text-primary-600">Latest Available</p>
-                <p className="text-sm font-bold text-primary-700">v{result.backendVersion}</p>
-              </div>
-            </div>
-
-            {/* Instruction Callout */}
             <div className="rounded-xl bg-neutral-50 p-3 text-xs text-neutral-600 border border-neutral-100 space-y-1.5">
               <p className="font-semibold text-neutral-800 flex items-center gap-1.5">
                 <AlertCircle size={15} className="text-primary-600 shrink-0" />
-                Ask the developer for new copy or download latest version
+                Ask the developer for a new copy, or download the latest version
               </p>
               <p className="text-neutral-500 pl-5">
                 {result.info.updateMessage ||
@@ -120,7 +109,6 @@ export function UpdateNotificationModal() {
               </p>
             </div>
 
-            {/* Changelog highlights if available */}
             {result.info.changelog && result.info.changelog.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-neutral-700">What&apos;s new in this release:</p>
@@ -135,7 +123,16 @@ export function UpdateNotificationModal() {
               </div>
             )}
 
-            {/* Action Buttons */}
+            <div className="flex items-center justify-between rounded-xl border border-neutral-100 bg-white px-3 py-2 text-[11px] text-neutral-500">
+              <span>
+                Installed build <span className="font-semibold text-neutral-700">v{APP_VERSION}</span>
+              </span>
+              <span className="text-neutral-300">•</span>
+              <span>
+                Server <span className="font-semibold text-primary-700">v{result.info.version}</span>
+              </span>
+            </div>
+
             <div className="pt-2 space-y-2">
               <button
                 type="button"
@@ -171,4 +168,3 @@ export function UpdateNotificationModal() {
     </AnimatePresence>
   );
 }
-

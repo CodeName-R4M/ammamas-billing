@@ -101,6 +101,35 @@ function isLocalNewer(local: string | null | undefined, remote: string | null | 
 }
 
 /**
+ * Loads the shop details (name, address, phone, UPI, tax) from the cloud so the
+ * business name is never hardcoded in the UI, receipts or exports.
+ * The public app key is allowed to read this table, so it works before sign-in too.
+ */
+export async function syncBusinessSettings(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    const { data, error } = await supabase.from('business_settings').select('*').limit(1).maybeSingle();
+    if (error || !data) return;
+    useDemoStore.setState((s) => ({
+      settings: {
+        ...s.settings,
+        business_name: data.business_name ?? s.settings.business_name,
+        logo_url: data.logo_url ?? s.settings.logo_url,
+        phone: data.phone ?? s.settings.phone,
+        address: data.address ?? s.settings.address,
+        upi_id: data.upi_id ?? s.settings.upi_id,
+        upi_name: data.upi_name ?? s.settings.upi_name,
+        tax_rate: Number(data.tax_rate ?? s.settings.tax_rate),
+        currency: data.currency ?? s.settings.currency,
+      },
+    }));
+  } catch (err) {
+    // The shop details keep their last known values when the cloud is unreachable.
+    console.warn('Could not load business settings from the cloud:', err);
+  }
+}
+
+/**
  * Synchronizes categories and products from Supabase cloud database to the local Zustand store.
  * Allows Web and Android devices to share items in real-time.
  */

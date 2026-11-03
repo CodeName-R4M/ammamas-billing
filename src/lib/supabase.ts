@@ -18,6 +18,11 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: false,
         storageKey: 'alpha-supabase-session',
+        // Run auth work directly instead of through the browser's Web Locks.
+        // The Android WebView keeps a lock request pending forever after the
+        // app is killed mid-refresh, which leaves getSession() hanging and the
+        // app stuck on its loading spinner.
+        lock: (_name, _acquireTimeout, fn) => fn(),
       },
     })
   : null;

@@ -26,3 +26,6 @@ dist-ssr
 backup/
 .firebase/
 .gradle/
+
+# Archive produced by package-and-push.bat
+copy.zip

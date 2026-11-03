@@ -40,6 +40,17 @@ async function loadProfile(authUserId: string, fallbackEmail: string): Promise<A
   };
 }
 
+/**
+ * Rejects after `ms` so a stalled session check can never block start-up — the
+ * app falls back to the login screen instead of spinning forever.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Session check timed out')), ms)),
+  ]);
+}
+
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   ready: false,
@@ -90,13 +101,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
       return;
     }
     try {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await withTimeout(supabase.auth.getSession(), 8000);
       const session = data.session;
       if (!session?.user) {
         set({ user: null, ready: true });
         return;
       }
-      const profile = await loadProfile(session.user.id, session.user.email ?? '');
+      const profile = await withTimeout(loadProfile(session.user.id, session.user.email ?? ''), 8000);
       set({ user: profile, ready: true });
     } catch {
       set({ user: null, ready: true });

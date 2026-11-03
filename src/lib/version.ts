@@ -1,16 +1,26 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
- * Version advertised by THIS build. Bump this together with the backend
- * (`publish_app_version` RPC / public/version.json) whenever you ship a release.
+ * Versioning lives in the .env files — edit VITE_APP_VERSION and
+ * VITE_BACKEND_VERSION there and rebuild to ship. Nothing in the app can change
+ * them: neither an admin nor a cashier has an editable field for them.
+ *
+ *   • VITE_APP_VERSION     → version of this frontend build.
+ *   • VITE_BACKEND_VERSION → version of the backend this build talks to.
+ *
+ * The app shows a read-only update notice whenever the backend version is ahead
+ * of the app version.
  */
-export const CURRENT_FRONTEND_VERSION = '1.0.0';
-export const APP_BUILD_DATE = '2026-11-02';
+const env = (value: string | undefined, fallback: string): string =>
+  typeof value === 'string' && value.trim() ? value.trim() : fallback;
+
+export const APP_VERSION = env(import.meta.env.VITE_APP_VERSION, '1.0.0');
+export const BACKEND_VERSION = env(import.meta.env.VITE_BACKEND_VERSION, '1.0.1');
+export const APP_BUILD_DATE = env(import.meta.env.VITE_BUILD_DATE, '2026-11-02');
 
 export interface AppVersionInfo {
   version: string;
   minSupportedVersion?: string;
-  releaseDate?: string;
   updateTitle?: string;
   updateMessage?: string;
   downloadUrl?: string;
@@ -21,8 +31,6 @@ export interface AppVersionInfo {
 
 export interface VersionCheckResult {
   mismatch: boolean;
-  currentVersion: string;
-  backendVersion: string;
   info: AppVersionInfo;
   shouldNotify: boolean;
 }
@@ -38,122 +46,80 @@ interface VersionRow {
   developer_contact: string | null;
   force_update: boolean | null;
   changelog: unknown;
-  published_at: string | null;
+}
+
+/** True when `candidate` is a newer dotted version than `current`. */
+function isNewer(candidate: string, current: string): boolean {
+  const a = candidate.split('.').map((n) => parseInt(n, 10) || 0);
+  const b = current.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const left = a[i] ?? 0;
+    const right = b[i] ?? 0;
+    if (left !== right) return left > right;
+  }
+  return false;
+}
+
+/** True when the advertised backend version is ahead of this build. */
+export function isAppOutdated(backendVersion: string): boolean {
+  return isNewer(backendVersion, APP_VERSION);
 }
 
 /**
- * Resolves the version the backend currently advertises, in priority order:
- *   1. Supabase `app_version_control` (live, anon-readable — works before login)
- *   2. `/version.json` shipped with the hosting deploy (static fallback)
- *   3. Legacy `audit_logs.APP_VERSION_UPDATE` entries
+ * Reads the version the backend currently advertises. The row is public-read so
+ * an old copy of the app can still see it, and read-only for everyone in the app.
  */
 export async function fetchBackendVersionInfo(): Promise<AppVersionInfo | null> {
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data } = await supabase
-        .from('app_version_control')
-        .select(
-          'latest_version, min_supported_version, update_title, release_notes, download_url, developer_contact, force_update, changelog, published_at',
-        )
-        .eq('id', 1)
-        .maybeSingle();
-
-      const row = data as VersionRow | null;
-      if (row?.latest_version) {
-        return {
-          version: String(row.latest_version),
-          minSupportedVersion: row.min_supported_version ?? undefined,
-          updateTitle: row.update_title ?? undefined,
-          updateMessage: row.release_notes ?? undefined,
-          downloadUrl: row.download_url ?? undefined,
-          developerContact: row.developer_contact ?? undefined,
-          forceUpdate: Boolean(row.force_update),
-          releaseDate: row.published_at ? String(row.published_at).slice(0, 10) : undefined,
-          changelog: Array.isArray(row.changelog) ? (row.changelog as string[]) : undefined,
-        };
-      }
-    } catch (err) {
-      console.warn('Could not read app_version_control from backend:', err);
-    }
-  }
-
+  if (!isSupabaseConfigured || !supabase) return null;
   try {
-    const res = await fetch(`/version.json?t=${Date.now()}`, {
-      cache: 'no-store',
-      headers: { Pragma: 'no-cache', 'Cache-Control': 'no-cache' },
-    });
-    if (res.ok) {
-      const info = (await res.json()) as AppVersionInfo;
-      if (info?.version) return info;
-    }
+    const { data } = await supabase
+      .from('app_version_control')
+      .select(
+        'latest_version, min_supported_version, update_title, release_notes, download_url, developer_contact, force_update, changelog',
+      )
+      .eq('id', 1)
+      .maybeSingle();
+
+    const row = data as VersionRow | null;
+    if (!row?.latest_version) return null;
+
+    return {
+      version: String(row.latest_version),
+      minSupportedVersion: row.min_supported_version ?? undefined,
+      updateTitle: row.update_title ?? undefined,
+      updateMessage: row.release_notes ?? undefined,
+      downloadUrl: row.download_url ?? undefined,
+      developerContact: row.developer_contact ?? undefined,
+      forceUpdate: Boolean(row.force_update),
+      changelog: Array.isArray(row.changelog) ? (row.changelog as string[]) : undefined,
+    };
   } catch (err) {
-    console.warn('Could not fetch /version.json from hosting backend:', err);
+    console.warn('Could not read app_version_control from the backend:', err);
+    return null;
   }
-
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data } = await supabase
-        .from('audit_logs')
-        .select('payload, created_at')
-        .eq('action', 'APP_VERSION_UPDATE')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data?.payload) {
-        const payload = data.payload as Record<string, unknown>;
-        if (payload.latest_version) {
-          return {
-            version: String(payload.latest_version),
-            minSupportedVersion: payload.min_supported_version ? String(payload.min_supported_version) : undefined,
-            updateTitle: payload.title ? String(payload.title) : undefined,
-            updateMessage: payload.release_notes ? String(payload.release_notes) : undefined,
-            downloadUrl: payload.download_url ? String(payload.download_url) : undefined,
-            forceUpdate: Boolean(payload.force_update),
-            releaseDate: String(data.created_at).slice(0, 10),
-            changelog: Array.isArray(payload.changelog) ? (payload.changelog as string[]) : undefined,
-          };
-        }
-      }
-    } catch {
-      // Supabase audit check is supplementary
-    }
-  }
-
-  return null;
 }
 
 /**
- * Compares the running frontend against the backend version.
- * `shouldNotify` is true only once per app session (sessionStorage flag).
+ * Compares this build against the backend. The declared backend version comes
+ * from .env; the live `app_version_control` row, when reachable, only makes the
+ * notice more accurate by carrying the release notes and download link.
  */
 export async function checkBackendVersion(): Promise<VersionCheckResult | null> {
-  const backendInfo = await fetchBackendVersionInfo();
-  if (!backendInfo || !backendInfo.version) return null;
+  const live = await fetchBackendVersionInfo();
 
-  const mismatch = backendInfo.version !== CURRENT_FRONTEND_VERSION;
-  const alreadySeenInSession = Boolean(sessionStorage.getItem(SESSION_KEY));
+  // Warn when either the declared backend version or the live server is ahead.
+  const advertised = live && isNewer(live.version, BACKEND_VERSION) ? live.version : BACKEND_VERSION;
+  const mismatch = isAppOutdated(advertised);
+  const info: AppVersionInfo = { ...(live ?? {}), version: advertised };
 
   return {
     mismatch,
-    currentVersion: CURRENT_FRONTEND_VERSION,
-    backendVersion: backendInfo.version,
-    info: backendInfo,
-    shouldNotify: mismatch && !alreadySeenInSession,
+    info,
+    shouldNotify: mismatch && !sessionStorage.getItem(SESSION_KEY),
   };
 }
 
-/**
- * Records that the update dialogue was presented in the current session.
- * Re-opening or restarting the app opens a new session where sessionStorage is clear.
- */
+/** Records that the notice was shown in this session. */
 export function markUpdateDialogSeen(): void {
   sessionStorage.setItem(SESSION_KEY, 'true');
-}
-
-/**
- * Resets the session flag (useful for testing from the Admin console).
- */
-export function resetUpdateDialogSessionFlag(): void {
-  sessionStorage.removeItem(SESSION_KEY);
 }

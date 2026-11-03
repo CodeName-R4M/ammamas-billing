@@ -43,6 +43,8 @@ export interface CartItem {
   unit: string;
   max_stock: number;
   qty: number;
+  /** True for a manually typed bill line (an item that is not in the catalog). */
+  is_custom?: boolean;
 }
 
 export type PaymentMethod = 'cash' | 'upi';

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
+import { APP_NAME } from '@/lib/brand';
 
 let cachedLogoBase64: string | null = null;
 
@@ -50,7 +51,7 @@ export interface ExportOptions {
 export async function exportToPdf(options: ExportOptions): Promise<void> {
   const {
     title,
-    subtitle = 'Ammamas Billing & Retail Management',
+    subtitle = APP_NAME,
     columns,
     data,
     filename,
@@ -83,7 +84,7 @@ export async function exportToPdf(options: ExportOptions): Promise<void> {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(220, 38, 38); // Primary Ammamas Red
-      doc.text('AMMAMAS', leftMargin + logoW + 4, headerY + 6);
+      doc.text(APP_NAME.toUpperCase(), leftMargin + logoW + 4, headerY + 6);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
@@ -94,7 +95,7 @@ export async function exportToPdf(options: ExportOptions): Promise<void> {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(220, 38, 38);
-      doc.text('AMMAMAS BILLING', leftMargin, headerY + 6);
+      doc.text(APP_NAME.toUpperCase(), leftMargin, headerY + 6);
     }
 
     // Right side report title
@@ -184,7 +185,7 @@ export async function exportToPdf(options: ExportOptions): Promise<void> {
         doc.setFontSize(7);
         doc.setTextColor(156, 163, 175);
         doc.text(
-          `Ammamas Billing System · Alpha Digitronix · Page ${hookData.pageNumber}`,
+          `${APP_NAME} · Generated for internal business records · Page ${hookData.pageNumber}`,
           pageWidth / 2,
           pageHeight - 6,
           { align: 'center' },
@@ -290,7 +291,7 @@ export async function printReport(options: ExportOptions): Promise<void> {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${title} - Ammamas</title>
+        <title>${title} - ${APP_NAME}</title>
         <style>
           @media print {
             body { margin: 0; padding: 15mm; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -306,7 +307,7 @@ export async function printReport(options: ExportOptions): Promise<void> {
           <div style="display: flex; align-items: center; gap: 12px;">
             <img src="${logoBase64}" style="height: 48px; object-fit: contain;" />
             <div>
-              <div style="font-size: 20px; font-weight: bold; color: #dc2626; line-height: 1;">AMMAMAS</div>
+              <div style="font-size: 20px; font-weight: bold; color: #dc2626; line-height: 1;">${APP_NAME}</div>
               <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Retail POS & Billing Management</div>
             </div>
           </div>
@@ -327,7 +328,7 @@ export async function printReport(options: ExportOptions): Promise<void> {
           </tbody>
         </table>
         <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-          Ammamas Billing System · Generated for internal business records
+          ${APP_NAME} · Generated for internal business records
         </div>
         <script>
           window.onload = function() { window.print(); }

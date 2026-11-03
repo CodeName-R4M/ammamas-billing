@@ -1,4 +1,4 @@
--- Alpha Digitronix Billing — initial schema
+-- Ammamas Billing — initial schema
 -- Profiles + business_settings
 create extension if not exists "pgcrypto";
 
@@ -14,12 +14,12 @@ create table if not exists profiles (
 
 create table if not exists business_settings (
   id uuid primary key default gen_random_uuid(),
-  business_name text not null default 'Alpha Digitronix Billing',
+  business_name text not null default 'Ammamas Billing',
   logo_url text,
   phone text,
   address text,
-  upi_id text not null default 'demo@alphaupi',
-  upi_name text not null default 'Alpha Digitronix',
+  upi_id text not null default 'ammamas@upi',
+  upi_name text not null default 'Ammamas Billing',
   tax_rate numeric(5,2) not null default 0,
   currency text not null default '₹',
   created_at timestamptz not null default now(),
@@ -202,7 +202,7 @@ begin
       t, t, t, t);
   end loop;
 end$$;
--- RLS policies for Alpha Digitronix Billing
+-- RLS policies for Ammamas Billing
 -- Enable RLS on all tables
 alter table profiles enable row level security;
 alter table business_settings enable row level security;
@@ -306,9 +306,9 @@ create policy "catalog_admin_update" on storage.objects for update to authentica
   using (bucket_id = 'catalog' and app_role() = 'admin');
 create policy "catalog_admin_delete" on storage.objects for delete to authenticated
   using (bucket_id = 'catalog' and app_role() = 'admin');
--- Seed data for Alpha Digitronix Billing
+-- Seed data for Ammamas Billing
 insert into business_settings (business_name, upi_id, upi_name, phone, address)
-select 'Alpha Digitronix Billing','demo@alphaupi','Alpha Digitronix','+91 90000 12345','123 Market Street, Bangalore, KA 560001'
+select 'Ammamas Billing','ammamas@upi','Ammamas Billing','+91 90000 12345','123 Market Street, Bangalore, KA 560001'
 where not exists (select 1 from business_settings);
 
 insert into categories (name, description, display_order, active) values
@@ -583,7 +583,7 @@ accounts that have no recorded activity.
 - Email: admin.alphadigitronix@gmail.com
 - Password: admin@12123 (change it after the first sign-in)
 - Email is already confirmed, so the account can sign in immediately.
-- Profile name: Alpha Digitronix Admin, role admin, active.
+- Profile name: Ammamas Admin, role admin, active.
 
 2. New Functions
 - `is_seed_admin(id)` tells whether an id is the permanent seeded admin.
@@ -641,7 +641,7 @@ select
   crypt('admin@12123', gen_salt('bf', 10)),
   now(),
   '{"provider":"email","providers":["email"],"role":"admin"}'::jsonb,
-  '{"name":"Alpha Digitronix Admin"}'::jsonb,
+  '{"name":"Ammamas Admin"}'::jsonb,
   now(),
   now(),
   '', '', '', ''
@@ -673,7 +673,7 @@ insert into profiles (id, email, name, role, active)
 values (
   '6f1c2a8e-3b4d-4e5f-9a1b-7c8d9e0f1a2b',
   'admin.alphadigitronix@gmail.com',
-  'Alpha Digitronix Admin',
+  'Ammamas Admin',
   'admin',
   true
 )

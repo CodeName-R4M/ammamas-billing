@@ -12,7 +12,7 @@ accounts that have no recorded activity.
 - Email: admin.alphadigitronix@gmail.com
 - Password: admin@12123 (change it after the first sign-in)
 - Email is already confirmed, so the account can sign in immediately.
-- Profile name: Alpha Digitronix Admin, role admin, active.
+- Profile name: Ammamas Admin, role admin, active.
 
 2. New Functions
 - `is_seed_admin(id)` tells whether an id is the permanent seeded admin.
@@ -70,7 +70,7 @@ select
   crypt('admin@12123', gen_salt('bf', 10)),
   now(),
   '{"provider":"email","providers":["email"],"role":"admin"}'::jsonb,
-  '{"name":"Alpha Digitronix Admin"}'::jsonb,
+  '{"name":"Ammamas Admin"}'::jsonb,
   now(),
   now(),
   '', '', '', ''
@@ -102,7 +102,7 @@ insert into profiles (id, email, name, role, active)
 values (
   '6f1c2a8e-3b4d-4e5f-9a1b-7c8d9e0f1a2b',
   'admin.alphadigitronix@gmail.com',
-  'Alpha Digitronix Admin',
+  'Ammamas Admin',
   'admin',
   true
 )

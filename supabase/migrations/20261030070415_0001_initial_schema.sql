@@ -1,4 +1,4 @@
--- Alpha Digitronix Billing — initial schema
+-- Ammamas Billing — initial schema
 -- Profiles + business_settings
 create extension if not exists "pgcrypto";
 
@@ -14,12 +14,12 @@ create table if not exists profiles (
 
 create table if not exists business_settings (
   id uuid primary key default gen_random_uuid(),
-  business_name text not null default 'Alpha Digitronix Billing',
+  business_name text not null default 'Ammamas Billing',
   logo_url text,
   phone text,
   address text,
-  upi_id text not null default 'demo@alphaupi',
-  upi_name text not null default 'Alpha Digitronix',
+  upi_id text not null default 'ammamas@upi',
+  upi_name text not null default 'Ammamas Billing',
   tax_rate numeric(5,2) not null default 0,
   currency text not null default '₹',
   created_at timestamptz not null default now(),

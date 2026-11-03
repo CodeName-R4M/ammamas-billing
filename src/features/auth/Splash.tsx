@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { APP_NAME } from '@/lib/brand';
 
 export function Splash({ onDone }: { onDone: () => void }) {
   return (
@@ -18,7 +19,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
           <img src="/logo-red.png" alt="Ammamas" className="max-h-full max-w-full object-contain" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Ammamas</h1>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{APP_NAME}</h1>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-600 mt-0.5">Billing &amp; Inventory</p>
         </div>
       </motion.div>
@@ -35,7 +36,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
         />
       </motion.div>
       <p className="absolute bottom-6 text-[10px] font-medium tracking-wider text-neutral-400">
-        AMMAMAS RETAIL POS · POWERED BY ALPHA DIGITRONIX
+        {APP_NAME.toUpperCase()}
       </p>
     </motion.div>
   );

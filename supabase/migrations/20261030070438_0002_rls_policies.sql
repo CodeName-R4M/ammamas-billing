@@ -1,4 +1,4 @@
--- RLS policies for Alpha Digitronix Billing
+-- RLS policies for Ammamas Billing
 -- Enable RLS on all tables
 alter table profiles enable row level security;
 alter table business_settings enable row level security;

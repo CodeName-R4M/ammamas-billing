@@ -1,6 +1,6 @@
--- Seed data for Alpha Digitronix Billing
+-- Seed data for Ammamas Billing
 insert into business_settings (business_name, upi_id, upi_name, phone, address)
-select 'Alpha Digitronix Billing','demo@alphaupi','Alpha Digitronix','+91 90000 12345','123 Market Street, Bangalore, KA 560001'
+select 'Ammamas Billing','ammamas@upi','Ammamas Billing','+91 90000 12345','123 Market Street, Bangalore, KA 560001'
 where not exists (select 1 from business_settings);
 
 insert into categories (name, description, display_order, active) values

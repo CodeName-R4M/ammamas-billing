@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Tag, X, Trash2, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Tag, X, Trash2, Plus, Minus, UserPlus, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '@/stores/cart-store';
 import { useDemoStore } from '@/stores/demo-store';
 import { calcTotals, formatCurrency, validateCoupon } from '@/lib/calculations';
+import { listCustomers, createCustomer, type Customer } from '@/lib/customers';
 import type { Coupon, PaymentMethod } from '@/types';
 
 export function Checkout() {
@@ -20,6 +21,52 @@ export function Checkout() {
   const [code, setCode] = useState('');
   const [applied, setApplied] = useState<Coupon | null>(null);
   const [method, setMethod] = useState<PaymentMethod>('cash');
+
+  // Optional buyer attached to this bill.
+  const [buyer, setBuyer] = useState<Customer | null>(null);
+  const [buyerQuery, setBuyerQuery] = useState('');
+  const [matches, setMatches] = useState<Customer[]>([]);
+  const [showNewBuyer, setShowNewBuyer] = useState(false);
+  const [newBuyer, setNewBuyer] = useState({ name: '', phone: '', location: '' });
+  const [savingBuyer, setSavingBuyer] = useState(false);
+
+  useEffect(() => {
+    if (!buyerQuery.trim()) {
+      setMatches([]);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      listCustomers(buyerQuery).then((rows) => {
+        if (active) setMatches(rows);
+      });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [buyerQuery]);
+
+  const saveBuyer = async () => {
+    if (!newBuyer.name.trim()) {
+      toast.error('Enter the buyer name');
+      return;
+    }
+    setSavingBuyer(true);
+    try {
+      const res = await createCustomer(newBuyer);
+      if (!res.ok || !res.customer) {
+        toast.error(res.message);
+        return;
+      }
+      setBuyer(res.customer);
+      setNewBuyer({ name: '', phone: '', location: '' });
+      setShowNewBuyer(false);
+      toast.success(res.message);
+    } finally {
+      setSavingBuyer(false);
+    }
+  };
 
   const totals = useMemo(() => calcTotals(items, applied, settings.tax_rate), [items, applied, settings.tax_rate]);
 
@@ -59,7 +106,10 @@ export function Checkout() {
         {items.map((it) => (
           <div key={it.product_id} className="flex items-center gap-3 border-b border-neutral-100 py-2 last:border-0">
             <div className="flex-1">
-              <p className="text-sm font-medium text-neutral-800">{it.name}</p>
+              <p className="text-sm font-medium text-neutral-800 flex items-center gap-1.5">
+                {it.name}
+                {it.is_custom && <span className="rounded-full bg-accent-100 px-1.5 py-0.5 text-[10px] font-semibold text-accent-700">manual</span>}
+              </p>
               <p className="text-xs text-neutral-400">{it.unit} · {formatCurrency(it.unit_price, settings.currency)}</p>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-neutral-200">
@@ -102,6 +152,59 @@ export function Checkout() {
         </div>
       </div>
 
+      {/* Buyer (optional) */}
+      <div className="card mb-4 p-4">
+        <label className="label flex items-center gap-1.5"><UserPlus size={14} /> Buyer (optional)</label>
+        {buyer ? (
+          <div className="flex items-center justify-between rounded-xl bg-accent-50 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-accent-800">{buyer.name}</p>
+              {(buyer.phone || buyer.location) && (
+                <p className="truncate text-xs text-accent-600">{[buyer.phone, buyer.location].filter(Boolean).join(' · ')}</p>
+              )}
+            </div>
+            <button onClick={() => setBuyer(null)} className="rounded-lg p-1 text-accent-700 hover:bg-accent-100" aria-label="Remove buyer"><X size={16} /></button>
+          </div>
+        ) : showNewBuyer ? (
+          <div className="space-y-2">
+            <input className="input" placeholder="Buyer name" value={newBuyer.name} onChange={(e) => setNewBuyer({ ...newBuyer, name: e.target.value })} />
+            <input className="input" placeholder="Phone" value={newBuyer.phone} onChange={(e) => setNewBuyer({ ...newBuyer, phone: e.target.value })} />
+            <input className="input" placeholder="Location" value={newBuyer.location} onChange={(e) => setNewBuyer({ ...newBuyer, location: e.target.value })} />
+            <div className="flex gap-2">
+              <button onClick={saveBuyer} disabled={savingBuyer} className="btn-primary flex-1 py-2 text-sm disabled:opacity-60">{savingBuyer ? 'Saving…' : 'Save buyer'}</button>
+              <button onClick={() => { setShowNewBuyer(false); setNewBuyer({ name: '', phone: '', location: '' }); }} className="btn-secondary px-4 text-sm">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <input
+              className="input"
+              placeholder="Search by name or phone"
+              value={buyerQuery}
+              onChange={(e) => setBuyerQuery(e.target.value)}
+            />
+            {matches.length > 0 && (
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-neutral-200">
+                {matches.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setBuyer(c); setBuyerQuery(''); setMatches([]); }}
+                    className="flex w-full items-center justify-between gap-2 border-b border-neutral-100 px-3 py-2 text-left last:border-0 hover:bg-accent-50"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-neutral-800">{c.name}</span>
+                      {(c.phone || c.location) && <span className="block truncate text-xs text-neutral-400">{[c.phone, c.location].filter(Boolean).join(' · ')}</span>}
+                    </span>
+                    <ChevronRight size={14} className="shrink-0 text-neutral-300" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setShowNewBuyer(true)} className="btn-secondary w-full py-2 text-sm">Add new buyer</button>
+          </div>
+        )}
+      </div>
+
       {/* Payment method */}
       <div className="card mb-4 p-4">
         <label className="label">Payment method</label>
@@ -112,7 +215,7 @@ export function Checkout() {
       </div>
 
       <button
-        onClick={() => nav(`/pos/payment?method=${method}${applied ? `&coupon=${applied.code}` : ''}`)}
+        onClick={() => nav(`/pos/payment?method=${method}${applied ? `&coupon=${applied.code}` : ''}${buyer ? `&customer=${buyer.id}` : ''}`)}
         className="btn-primary w-full py-3"
       >
         Continue to payment

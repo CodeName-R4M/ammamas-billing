@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { useAuthStore } from '@/stores/auth-store';
 import { Watermark } from '@/components/watermark/Watermark';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { APP_NAME } from '@/lib/brand';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -56,7 +57,7 @@ export function Login() {
             <img src="/logo-red.png" alt="Ammamas" className="max-h-full max-w-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">Ammamas</h1>
+            <h1 className="text-2xl font-bold text-neutral-900">{APP_NAME}</h1>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary-600">Billing &amp; Inventory</p>
           </div>
         </div>
@@ -70,7 +71,7 @@ export function Login() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="label">Email</label>
-              <input className="input" placeholder="you@alpha.in" {...register('email')} />
+              <input className="input" placeholder="you@ammamas.in" {...register('email')} />
               {errors.email && <p className="mt-1 text-xs text-danger-600">{errors.email.message}</p>}
             </div>
             <div>

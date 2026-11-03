@@ -11,6 +11,9 @@ import {
   LogIn,
   KeyRound,
   RefreshCw,
+  Zap,
+  History,
+  PlusCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDemoStore } from '@/stores/demo-store';
@@ -19,19 +22,24 @@ import { useCartStore } from '@/stores/cart-store';
 import { useNetworkStore } from '@/lib/network';
 import { syncCatalogFromSupabase } from '@/lib/sync';
 import { Modal } from '@/components/ui/admin';
+import { APP_NAME } from '@/lib/brand';
 
 export function CategoryHome() {
   const categories = useDemoStore((s) => s.categories);
   const products = useDemoStore((s) => s.products);
+  const currency = useDemoStore((s) => s.settings.currency);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const lastSync = useNetworkStore((s) => s.lastSync);
   const itemCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
+  const clearCart = useCartStore((s) => s.clear);
+  const addCustom = useCartStore((s) => s.addCustom);
   const nav = useNavigate();
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [emptyBillOpen, setEmptyBillOpen] = useState(false);
 
   const retrySync = async () => {
     setRetrying(true);
@@ -71,6 +79,22 @@ export function CategoryHome() {
     }
   };
 
+  // Starts a fresh bill. The cashier is asked first so an in-progress bill is never lost.
+  const startNewBill = () => {
+    if (itemCount > 0 && !window.confirm('Start a new bill? The current bill will be cleared.')) return;
+    clearCart();
+    toast.success('New bill started');
+    nav('/pos');
+  };
+
+  const shortcuts = [
+    { label: 'New Bill', icon: Zap, onClick: startNewBill },
+    { label: 'History', icon: History, onClick: () => nav('/pos/history') },
+    { label: 'View Cart', icon: ShoppingBag, onClick: () => nav('/pos/checkout') },
+    { label: 'Sync Data', icon: RefreshCw, onClick: retrySync },
+    { label: 'Admin Panel', icon: Shield, onClick: handleAdminClick },
+  ];
+
   return (
     <div className="w-full max-w-4xl mx-auto px-2.5 sm:px-4 pt-3 sm:pt-4">
       {/* Top Header - High z-index so dropdown floats above search bar */}
@@ -92,7 +116,7 @@ export function CategoryHome() {
                 {user?.role === 'admin' ? 'Admin' : 'Cashier'}
               </span>
             </div>
-            <p className="text-[11px] text-neutral-400">Ammamas Store</p>
+            <p className="text-[11px] text-neutral-400">{APP_NAME}</p>
           </div>
         </div>
 
@@ -203,6 +227,36 @@ export function CategoryHome() {
         />
       </div>
 
+      {/* Shortcuts — fast cashier access to the actions used all day */}
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-neutral-700">Quick Actions</h2>
+          <button
+            type="button"
+            onClick={() => setEmptyBillOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-accent-300 bg-accent-50 px-3 py-1.5 text-xs font-semibold text-accent-700 transition hover:bg-accent-100 active:scale-95"
+          >
+            <PlusCircle size={14} />
+            <span>Empty Bill</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {shortcuts.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={s.onClick}
+              className="card flex flex-col items-center gap-1.5 px-2 py-3 transition hover:-translate-y-0.5 hover:shadow-card-hover active:scale-95"
+            >
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary-50 text-primary-600">
+                <s.icon size={17} />
+              </span>
+              <span className="text-[11px] font-semibold text-neutral-700">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {itemCount > 0 && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-primary-100 bg-primary-50 px-3.5 py-2.5 text-xs font-medium text-primary-700">
           <span className="flex items-center gap-1.5">
@@ -306,6 +360,19 @@ export function CategoryHome() {
           ))}
         </div>
       )}
+
+      {/* Empty bill — a manually typed bill for items that are not in the catalog */}
+      <EmptyBillModal
+        open={emptyBillOpen}
+        currency={currency}
+        onClose={() => setEmptyBillOpen(false)}
+        onAdd={(name, price, qty, goToBill) => {
+          addCustom(name, price, qty);
+          setEmptyBillOpen(false);
+          toast.success(`${name} added to the bill`);
+          if (goToBill) nav('/pos/checkout');
+        }}
+      />
 
       {/* Admin Switch / Login Modal */}
       <AdminAuthModal
@@ -425,6 +492,95 @@ function AdminAuthModal({
             )}
           </button>
         </form>
+      </div>
+    </Modal>
+  );
+}
+
+function EmptyBillModal({
+  open,
+  currency,
+  onClose,
+  onAdd,
+}: {
+  open: boolean;
+  currency: string;
+  onClose: () => void;
+  onAdd: (name: string, price: number, qty: number, goToBill: boolean) => void;
+}) {
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [qty, setQty] = useState('1');
+
+  if (!open) return null;
+
+  const submit = (goToBill: boolean) => {
+    const p = Number(price);
+    const q = Number(qty);
+    if (!name.trim()) {
+      toast.error('Enter the item name');
+      return;
+    }
+    if (!Number.isFinite(p) || p <= 0) {
+      toast.error('Enter a valid price');
+      return;
+    }
+    if (!Number.isFinite(q) || q <= 0) {
+      toast.error('Enter a valid quantity');
+      return;
+    }
+    onAdd(name.trim(), p, q, goToBill);
+    setName('');
+    setPrice('');
+    setQty('1');
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Empty / Manual Bill">
+      <div className="space-y-3">
+        <p className="text-xs text-neutral-500">
+          Use this for walk-in items that are not in the catalog. The line follows the same
+          checkout, payment and receipt flow, and no stock is moved for it.
+        </p>
+        <div>
+          <label className="label">Item name</label>
+          <input
+            className="input"
+            placeholder="e.g. Loose tea 250g"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Price ({currency})</label>
+            <input
+              className="input"
+              inputMode="decimal"
+              placeholder="120"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label">Quantity</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              placeholder="1"
+              value={qty}
+              onChange={(e) => setQty(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={() => submit(false)} className="btn-secondary flex-1 py-2.5 text-xs font-semibold">
+            Add another item
+          </button>
+          <button type="button" onClick={() => submit(true)} className="btn-primary flex-1 py-2.5 text-xs font-semibold">
+            Add &amp; open bill
+          </button>
+        </div>
       </div>
     </Modal>
   );

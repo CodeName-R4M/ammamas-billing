@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem, Product } from '@/types';
+import { newId } from '@/lib/calculations';
 
 interface CartState {
   items: CartItem[];
   add: (product: Product, qty?: number) => void;
+  /** Adds a manually typed line — an item that is not in the catalog (empty bill). */
+  addCustom: (name: string, unitPrice: number, qty?: number) => void;
   inc: (productId: string) => void;
   dec: (productId: string) => void;
   remove: (productId: string) => void;
@@ -42,6 +45,22 @@ export const useCartStore = create<CartState>()(
           ],
         };
       }),
+      // A manually typed line: it is not in the catalog, so it has no stock limit.
+      addCustom: (name, unitPrice, qty = 1) => set((s) => ({
+        items: [
+          ...s.items,
+          {
+            product_id: `custom-${newId()}`,
+            name: name.trim(),
+            image_url: null,
+            unit_price: unitPrice,
+            unit: 'manual',
+            max_stock: 999,
+            qty,
+            is_custom: true,
+          },
+        ],
+      })),
       inc: (productId) => set((s) => ({
         items: s.items.map((i) =>
           i.product_id === productId && i.qty < i.max_stock

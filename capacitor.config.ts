@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.ammamas.billing',
   appName: 'Ammamas Billing',
   webDir: 'dist',
-  backgroundColor: '#FAF9FF',
+  backgroundColor: '#FFFFFF',
   android: {
     adjustMarginsForEdgeToEdge: 'auto',
   },

@@ -38,6 +38,7 @@ export function Payment() {
   const [params] = useSearchParams();
   const method = (params.get('method') as PaymentMethod) ?? 'cash';
   const couponCode = params.get('coupon');
+  const customerId = params.get('customer');
   const nav = useNavigate();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clear);
@@ -69,10 +70,17 @@ export function Payment() {
     setBeginState('starting');
     setSale(null);
     const { data, error } = await supabase.rpc('pos_begin_sale', {
-      p_items: items.map((i) => ({ product_id: i.product_id, qty: i.qty })),
+      // Catalog lines are sent by product id; manually typed (empty-bill) lines are
+      // sent by name + price so the server records them as ad-hoc items.
+      p_items: items.map((i) =>
+        i.is_custom
+          ? { product_id: null, name: i.name, unit_price: i.unit_price, qty: i.qty }
+          : { product_id: i.product_id, qty: i.qty },
+      ),
       p_payment_method: method,
       p_coupon_code: couponCode ?? null,
       p_confirm: false,
+      p_customer_id: customerId ?? null,
     });
     if (error) {
       setBeginState('error');

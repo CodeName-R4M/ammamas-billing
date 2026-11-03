@@ -49,7 +49,7 @@ export function ProductListing() {
 
   const exportOptions = {
     title: `${category.name} — Product List`,
-    subtitle: 'Ammamas Billing & Retail Management',
+    subtitle: 'Ammamas Billing',
     filename: `ammamas-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-products`,
     columns: [
       { header: 'Product', key: 'name' },
