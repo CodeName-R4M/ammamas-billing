@@ -7,7 +7,7 @@ export function CashierLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-accent-50/50 w-full max-w-full overflow-x-hidden">
       <ConnectionBanner />
-      <main className="flex-1 w-full max-w-full pb-36 sm:pb-40">
+      <main className="flex-1 w-full max-w-full pb-32 sm:pb-40">
         <Outlet />
       </main>
       <CartPanel />

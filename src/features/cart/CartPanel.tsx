@@ -68,11 +68,11 @@ export function CartPanel() {
 
       <motion.div
         layout
-        className="flex items-center gap-3 rounded-2xl bg-primary-700 p-3 text-white shadow-panel"
+        className="flex items-center gap-2.5 rounded-2xl bg-success-700 p-2.5 text-white shadow-panel sm:gap-3 sm:p-3"
       >
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-xl bg-primary-600/60 px-3 py-2"
+          className="flex items-center gap-2 rounded-xl bg-success-600/70 px-3 py-2"
           aria-label="Toggle cart"
         >
           <ShoppingCart size={18} />
@@ -81,10 +81,10 @@ export function CartPanel() {
           </motion.div>
         </button>
         <div className="flex-1">
-          <p className="text-xs text-primary-100">{totals.distinctCount} products · {totals.itemCount} items</p>
-          <p className="text-lg font-bold">{formatCurrency(totals.subtotal, currency)}</p>
+          <p className="text-[11px] text-success-100 sm:text-xs">{totals.distinctCount} products · {totals.itemCount} items</p>
+          <p className="text-base font-bold sm:text-lg">{formatCurrency(totals.subtotal, currency)}</p>
         </div>
-        <button onClick={() => nav('/pos/checkout')} className="btn bg-white px-4 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 active:scale-[0.98]">
+        <button onClick={() => nav('/pos/checkout')} className="btn shrink-0 bg-white px-3 py-2.5 text-xs font-semibold text-success-700 hover:bg-success-50 active:scale-[0.98] sm:px-4 sm:text-sm">
           Checkout <ArrowRight size={16} />
         </button>
       </motion.div>

@@ -90,7 +90,7 @@ export function AdminLayout() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />
             <motion.aside
               initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
-              className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-neutral-200 bg-white lg:hidden"
+              className="fixed left-0 top-0 z-40 h-screen w-[min(86vw,20rem)] border-r border-neutral-200 bg-white shadow-xl lg:hidden safe-top"
             >
               {SidebarContent}
             </motion.aside>
@@ -101,7 +101,7 @@ export function AdminLayout() {
       <div className="lg:pl-60">
         <ConnectionBanner />
         {/* Mobile header */}
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-neutral-200 bg-white/95 px-3 py-2.5 backdrop-blur lg:hidden safe-top">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-neutral-200 bg-white/95 px-2.5 py-2.5 backdrop-blur lg:hidden safe-top sm:px-3">
           <div className="flex items-center gap-2">
             <button onClick={() => setOpen(true)} className="btn-ghost rounded-lg p-2" aria-label="Menu"><Menu size={20} /></button>
             <div className="flex items-center gap-2">

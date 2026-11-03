@@ -143,7 +143,7 @@ export function ProductListing() {
                 transition={{ duration: 0.2, delay: i * 0.03 }}
                 className="card flex flex-col overflow-hidden"
               >
-                <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-accent-100 to-primary-100">
+                <div className="relative flex h-24 items-center justify-center bg-gradient-to-br from-accent-100 to-primary-100 sm:h-28">
                   <span className="text-2xl font-bold text-primary-300">{p.name.slice(0, 2).toUpperCase()}</span>
                   {p.stock <= 0 && (
                     <span className="badge absolute top-2 right-2 bg-danger-50 text-danger-600">Out</span>
@@ -158,7 +158,7 @@ export function ProductListing() {
                 <div className="flex flex-1 flex-col p-3">
                   <p className="line-clamp-2 text-sm font-semibold text-neutral-800">{p.name}</p>
                   <p className="mt-0.5 text-xs text-neutral-400">{p.unit} · {p.stock} in stock</p>
-                  <p className="mt-1 text-base font-bold text-primary-700">{formatCurrency(p.selling_price)}</p>
+                  <p className="mt-1 text-base font-bold text-success-700">{formatCurrency(p.selling_price)}</p>
                   <div className="mt-2">
                     {ci ? (
                       <div className="flex items-center justify-between rounded-xl border border-primary-200 bg-primary-50">
