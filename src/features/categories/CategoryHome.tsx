@@ -98,7 +98,7 @@ export function CategoryHome() {
   return (
     <div className="w-full max-w-4xl mx-auto px-2.5 sm:px-4 pt-3 sm:pt-4">
       {/* Top Header - High z-index so dropdown floats above search bar */}
-      <div className="relative z-30 mb-4 flex items-center justify-between gap-2">
+      <div className="relative z-30 mb-4 flex items-center justify-between gap-1.5 sm:gap-2">
         <div className="flex items-center gap-2.5">
           <div className="grid h-10 w-11 place-items-center rounded-xl bg-white p-1 shadow-xs border border-neutral-200">
             <img src="/logo-red.png" alt="Ammamas" className="max-h-full max-w-full object-contain" />
@@ -126,7 +126,7 @@ export function CategoryHome() {
           <button
             type="button"
             onClick={handleAdminClick}
-            className="flex items-center gap-1.5 rounded-xl border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 shadow-xs transition hover:border-primary-300 hover:bg-primary-100 active:scale-95"
+            className="flex items-center gap-1 rounded-xl border border-accent-200 bg-accent-50 px-2.5 py-2 text-[11px] font-semibold text-accent-700 shadow-xs transition hover:border-accent-300 hover:bg-accent-100 active:scale-95 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs"
             title="Open Admin Dashboard"
           >
             <Shield size={14} className="text-primary-600" />

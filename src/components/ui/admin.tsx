@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
-    <div className="mb-5 flex items-end justify-between">
+    <div className="mb-4 flex items-start justify-between gap-3 sm:mb-5 sm:items-end">
       <div>
-        <h1 className="text-xl font-bold text-neutral-800">{title}</h1>
+        <h1 className="text-lg font-bold text-neutral-800 sm:text-xl">{title}</h1>
         {subtitle && <p className="text-sm text-neutral-400">{subtitle}</p>}
       </div>
       {action}
